@@ -1,0 +1,15 @@
+flask
+flask_cors
+requests
+python-dotenv
+openai
+openai-whisper
+ffmpeg-python==0.2.0
+gunicorn
+numpy
+torch
+torchaudio
+--extra-index-url https://download.pytorch.org/whl/cpu
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
