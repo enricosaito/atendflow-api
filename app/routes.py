@@ -3,8 +3,9 @@
 from flask import current_app, request, jsonify
 from .openai_service import generate_response, analyze_image
 from .audio_service import handle_audio_message
-from .utils import get_chat_state, set_chat_state, send_message, get_user_state, set_user_state
+from .utils import get_chat_state, set_chat_state, send_message, get_user_state, set_user_state, send_custom_message
 from .flow_service import handle_welcome_flow, should_initiate_welcome_flow
+from .humanize_service import send_humanized_response
 import logging
 import traceback
 import os
@@ -127,13 +128,19 @@ def init_routes(app):
                     if ai_response:
                         logger.info(f"AI response generated: {ai_response[:100]}...")  # Log first 100 chars
                         
-                        send_result = send_message(user_number, ai_response)
-                        logger.info(f"AI response sent: {send_result}")
+                        # Use humanized response instead of direct message sending
+                        send_results = send_humanized_response(
+                            user_number, 
+                            ai_response,
+                            send_custom_message
+                        )
+                        
+                        logger.info(f"Humanized AI responses sent: {len(send_results)} messages")
                         
                         return jsonify({
                             "status": "success", 
                             "ai_response": ai_response, 
-                            "send_results": send_result
+                            "send_results": send_results
                         }), 200
                     else:
                         logger.error("Empty AI response generated")
@@ -213,14 +220,20 @@ def init_routes(app):
                 ai_response = generate_response(transcription, user_number)
                 logger.info(f"AI response generated for audio: {ai_response[:100]}...")
                 
-                send_result = send_message(user_number, ai_response)
-                logger.info(f"Audio response sent: {send_result}")
+                # Use humanized response for audio responses too
+                send_results = send_humanized_response(
+                    user_number, 
+                    ai_response,
+                    send_custom_message
+                )
+                
+                logger.info(f"Humanized audio response sent: {len(send_results)} messages")
                 
                 return jsonify({
                     "status": "success", 
                     "transcription": transcription, 
                     "ai_response": ai_response, 
-                    "send_result": send_result
+                    "send_results": send_results
                 }), 200
             else:
                 logger.info(f"AI is disabled for {user_number}, not responding to audio")
@@ -251,14 +264,20 @@ def init_routes(app):
                 ai_response = generate_response(context, user_number, image_url)
                 logger.info(f"AI response generated for image: {ai_response[:100]}...")
                 
-                send_result = send_message(user_number, ai_response)
-                logger.info(f"Image response sent: {send_result}")
+                # Use humanized response for image responses too
+                send_results = send_humanized_response(
+                    user_number, 
+                    ai_response,
+                    send_custom_message
+                )
+                
+                logger.info(f"Humanized image response sent: {len(send_results)} messages")
                 
                 return jsonify({
                     "status": "success", 
                     "image_analysis": image_analysis,
                     "ai_response": ai_response, 
-                    "send_result": send_result
+                    "send_results": send_results
                 }), 200
             else:
                 logger.info(f"AI is disabled for {user_number}, not responding to image")

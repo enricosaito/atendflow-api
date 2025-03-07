@@ -24,6 +24,12 @@ def create_app():
     else:
         logger.info("Whisper model loaded successfully.")
 
+    # Ensure the 'data' directory exists
+    os.makedirs("data", exist_ok=True)
+    
+    # Initialize humanize service
+    logger.info("Initializing humanized messaging service")
+
     from .routes import init_routes
     init_routes(app)
 
