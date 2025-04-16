@@ -1,47 +1,91 @@
-# Explicação da Estrutura do Projeto
+# AtendFlow API - Sistema de Integração com WhatsApp
 
-Bem-vindo ao projeto! Essa estrutura é baseada no framework Flask e usa o "Flask Factory Pattern". Vou explicar o padrão de design desse código
-vamos entender para que serve cada arquivo e diretório, assim como a forma que eles trabalham juntos.
+## Visão Geral do Projeto
 
-## Directory Structure:
+A **AtendFlow API** é um sistema desenvolvido para automatizar e aprimorar mensagens no WhatsApp. Ela se conecta ao WhatsApp por meio da **Z-API** (um serviço terceirizado) e fornece respostas inteligentes usando **IA**. Este sistema é capaz de:
 
-### `app/`
+- Enviar mensagens automáticas de boas-vindas  
+- Processar mensagens de texto com respostas geradas por IA  
+- Transcrever e responder mensagens de voz  
+- Analisar imagens e gerar respostas com base nelas  
+- Enviar mensagens humanizadas que parecem mais naturais  
+- Obter informações a partir de documentos PDF enviados
 
-Esse é o diretório principal da aplicação, contendo todos os arquivos essenciais para o app em Flask.
+## Estrutura do Projeto Explicada
 
-- `__init__.py`: Inicializa o app utilizando o Flask factory pattern. Isso permite a criação de múltiplas inst6ancias do aplicativo se necessário, por exemplo para testes.
+### Arquivos Principais
 
-- `auth/`: Contém as credenciais e o token para autenticação do Google Calendar. É necessário a credencial para gerar o token com a conta Google do cliente. Esses arquivos são necessários para a criação de eventos via API.
+- **app.py**: Ponto de entrada da aplicação. Quando este arquivo é executado, todo o sistema é iniciado.
 
-- `config/`: Contém configurações para o aplicativo em Flask. Todas as variáveis de ambiente e chaves secretas são carregadas e acessadas aqui.
+- **disparar_mensagens.py**: Ferramenta para envio em massa de mensagens de marketing para uma lista de contatos (por exemplo, campanhas de Black Friday). Pode ser usada independentemente da aplicação principal.
 
-- `data/`: Contém os arquivos relacionados à personalização e treinamento do Chatbot, por exemplo: Prompts, documentos relevantes.
+- **requirements.txt**: Lista todas as ferramentas e bibliotecas externas necessárias para o projeto funcionar.
 
-- `routes.py`: Funções de utilidade para ajudar em diferentes funcionalidades da aplicação. TODO
+### Diretório App
 
-- `utils.py`: Contains utility functions specifically for handling WhatsApp related operations. TODO
+Contém as funcionalidades principais da aplicação:
 
-## Main Files: TODO
+- **__init__.py**: Configura a aplicação ao iniciar, carregando as configurações necessárias e preparando o sistema.
 
-- `run.py`: This is the entry point to run the Flask application. It sets up and runs our Flask app on a server.
+- **audio_service.py**: Gerencia mensagens de voz enviadas pelos usuários do WhatsApp. Faz o download dos áudios, converte para o formato correto e transcreve para texto.
 
-- `quickstart.py`: A quickstart guide or tutorial-like code to help new users/developers understand how to start using or contributing to the project.
+- **flow_service.py**: Gerencia fluxos de conversa — como envio de mensagens de boas-vindas em sequência, com atrasos, para parecer mais natural.
 
-- `requirements.txt`: Lists all the Python packages and libraries required for this project. They can be installed using `pip`.
+- **humanize_service.py**: Torna as respostas da IA mais humanas, quebrando-as em mensagens menores com atrasos realistas de digitação.
 
-## How It Works: TODO
+- **message_splitting.py**: Divide mensagens longas em partes menores para funcionar melhor no WhatsApp (que possui limites de caracteres).
 
-1. **Flask Factory Pattern**: Instead of creating a Flask instance globally, we create it inside a function (`create_app` in `__init__.py`). This function can be configured to different configurations, allowing for better flexibility, especially during testing.
+- **openai_service.py**: Conecta-se à API da OpenAI (como o ChatGPT) para gerar respostas inteligentes e analisar imagens.
 
-2. **Blueprints**: In larger Flask applications, functionalities can be grouped using blueprints. Here, `views.py` is a blueprint grouping related routes. It's like a subset of the application, handling a specific functionality (in this case, webhook views).
+- **pdf_service.py**: Processa informações contidas em documentos PDF, permitindo que a IA use esses dados ao responder perguntas.
 
-3. **app.config**: Flask uses an object to store its configuration. We can set various properties on `app.config` to control aspects of Flask's behavior. In our `config.py`, we load settings from environment variables and then set them on `app.config`.
+- **routes.py**: Atua como "controlador de tráfego" da aplicação, lidando com mensagens recebidas e direcionando-as para os serviços apropriados.
 
-4. **Decorators**: These are Python's way of applying a function on top of another, allowing for extensibility and reusability. In the context of Flask, it can be used to apply additional functionality or checks to routes. The `decorators` folder contains such utility functions. For example, `signature_required` in `security.py` ensures that incoming requests are secure and valid.
+- **utils.py**: Contém ferramentas auxiliares usadas em todo o sistema, como formatação de mensagens e funções para comunicação com a API do WhatsApp.
 
-If you're new to Flask or working on larger Flask projects, understanding this structure can give a solid foundation to build upon and maintain scalable Flask applications.
+### Diretório Config
 
-## Running the App TODO
+- **__init__.py**: Arquivo simples que ajuda a carregar as configurações.
 
-When you want to run the app, just execute the run.py script. It will create the app instance and run the Flask development server.
-Lastly, it's good to note that when you deploy the app to a production environment, you might not use run.py directly (especially if you use something like Gunicorn or uWSGI). Instead, you'd just need the application instance, which is created using create_app(). The details of this vary depending on your deployment strategy, but it's a point to keep in mind.
+- **config.py**: Armazena as configurações importantes da aplicação, como chaves de API e URLs de serviços.
+
+## Como Funciona
+
+1. **Recebimento de Mensagem**: Quando alguém envia uma mensagem para seu número do WhatsApp, a Z-API a encaminha para sua aplicação.
+
+2. **Processamento da Mensagem**:
+   - Mensagens de texto são analisadas e enviadas para a IA gerar respostas inteligentes  
+   - Áudios são transcritos para texto e, em seguida, processados  
+   - Imagens são analisadas para entender seu conteúdo
+
+3. **Geração de Resposta**: A IA cria respostas com base em:
+   - O conteúdo da mensagem  
+   - O histórico da conversa  
+   - Conhecimento extraído de documentos PDF enviados
+
+4. **Entrega Humanizada**: Em vez de enviar uma mensagem robótica longa, o sistema:
+   - Divide as respostas em partes menores e mais naturais  
+   - Adiciona atrasos realistas de digitação  
+   - Inclui pequenas pausas entre as mensagens
+
+## Funcionalidades Especiais
+
+- **Fluxo de Boas-Vindas**: Novos usuários recebem uma sequência de mensagens com reações  
+- **Ativação/Desativação da IA**: É possível ligar ou desligar as respostas inteligentes com mensagens específicas  
+- **Base de Conhecimento com PDFs**: É possível enviar PDFs com informações que a IA pode usar nas respostas  
+- **Campanha de Mensagens em Massa**: Envie mensagens de marketing para vários contatos com o script `disparar_mensagens.py`
+
+## Como Executar o Projeto
+
+1. Certifique-se de que todas as variáveis de ambiente estejam configuradas (chaves de API, etc.)  
+2. Execute `python app.py` para iniciar a aplicação principal  
+3. O sistema ficará escutando mensagens recebidas no WhatsApp via Z-API
+
+## Observações Adicionais
+
+- Todo o histórico de conversas e o estado dos usuários são armazenados localmente  
+- Os arquivos PDF devem ser colocados na pasta `data/pdfs`  
+- O sistema usa o modelo de IA disponível no momento (por padrão, o GPT-4o-mini)  
+- A transcrição de voz requer microfone e configuração de áudio funcionando
+
+Este projeto combina **Flask** (framework web), **Z-API** (integração com WhatsApp) e **OpenAI** (respostas inteligentes) para criar uma solução completa de automação no WhatsApp.
